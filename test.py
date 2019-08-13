@@ -13,7 +13,53 @@ class Price(object):
         self.start_line = start_row
         self.name = name
         self.costs = []
+   
+
+def parse_categories(sh):
+   
+    int_cat = {}
+    ext_cat = {}
+
+    row = sh.row(0)
+
+    for idx in range(16,21):
+        cell = row[idx]
+        int_cat[idx] = cell.value
+
+    for idx in range(22,28):
+        cell = row[idx]
+        if cell.ctype != 0:
+            ext_cat[idx] = cell.value
     
+    print("")
+    print(int_cat)
+    print(ext_cat)
+
+    return int_cat, ext_cat
+    
+
+def transpose(start, end, header_row, line_to_price):
+    
+    headers = {}
+    cat_to_prices = {}
+    
+    for cat in range(start, end):
+        header = sh.cell(header_row, cat).value
+        header.replace("\n", " ")
+        headers[cat] = header
+
+        prices_list = cat_to_prices.get(cat, [])
+        cat_to_prices[cat] = prices_list
+    
+        for idx, cell in enumerate(sh.col(cat)):
+            if cell.ctype == 2:
+                if idx in line_to_price.keys():
+                    prices_list.append(line_to_price[idx])
+    res = {}
+    for hd in headers:
+        res[headers[hd]] = cat_to_prices[hd]
+
+    return res
 
 
 if __name__ == "__main__":
@@ -23,6 +69,14 @@ if __name__ == "__main__":
     print("Worksheet name(s): {0}".format(book.sheet_names()))
     sh = book.sheet_by_index(6)
     
+
+
+    int_cat, ext_cat = parse_categories(sh)
+    
+    all_cat = {}
+    all_cat.update(int_cat)
+    all_cat.update(ext_cat)
+
     prices = []
    
     to_skip = 0
@@ -80,19 +134,75 @@ if __name__ == "__main__":
     tot_int = 0
     tot_est = 0
 
+    line_to_price = {}
+
     for p in prices:
         print("\nline: {} -> {} {}".format(p.start_line, p.code, p.name))
         print("description: {}".format(p.description[0:80]))
         print("costs:")
-        for p in p.costs:
-            print("    {}".format(p))
-            if p[2] == "int":
-                tot_int = tot_int + p[3]
-            elif p[2] == "est":
-                tot_est = tot_est + p[3]
+        for c in p.costs:
+            print("    {}".format(c))
+            if c[2] == "int":
+                tot_int = tot_int + c[3]
+            elif c[2] == "est":
+                tot_est = tot_est + c[3]
+
+            line_to_price[c[0]] = (p.name, c)
 
 
     print(tot_int)
     print(tot_est)
     
+
+    for line in line_to_price:
+        print("{} : {}".format(line, line_to_price[line]))
+
+
+    print(all_cat)
+
+    cat_to_prices = {}
+    for cat in int_cat:
+        prices_list = cat_to_prices.get(cat, [])
+        cat_to_prices[cat] = prices_list
+        
+        for idx, cell in enumerate(sh.col(cat)):
+            if cell.ctype == 2:
+                if idx in line_to_price.keys():
+                    prices_list.append(line_to_price[idx])
+    
+    for cat in ext_cat:
+        prices_list = cat_to_prices.get(cat, [])
+        cat_to_prices[cat] = prices_list
+        
+        for idx, cell in enumerate(sh.col(cat)):
+            if cell.ctype == 2:
+                if idx in line_to_price.keys():
+                    prices_list.append(line_to_price[idx])
+
+
+    for cat in cat_to_prices:
+        print("")
+        print(all_cat[cat])
+        print(sum([ x[1][3] for x in cat_to_prices[cat]]))
+
+
+    cat_contrib = sh.row(1)
+    for idx, c in enumerate(cat_contrib):
+        print("{} -> {}".format(idx, c.value))
+        
+    
+   
+
+    #tot_gio = #row 30
+    #tot_ari = #row 31
+    
+    #row 32 - 37
+    #res = transpose(start, end, header_row)
+    res = transpose(32, 37, 1, line_to_price)
+    #print(res)
+    for r in res:
+        print(r)
+        for price in res[r]:
+            print(" > {}".format(price))
+
 
