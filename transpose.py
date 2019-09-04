@@ -72,26 +72,9 @@ def print_matrix(mat):
         print("sum: {}".format(price_sum))
 
 
+def parse_prices(sheet):
 
-if __name__ == "__main__":
-    
-    book = xlrd.open_workbook(sys.argv[1])
-    print("The number of worksheets is {0}".format(book.nsheets))
-    print("Worksheet name(s): {0}".format(book.sheet_names()))
-    sh = book.sheet_by_index(6)
-
-    int_cat, ext_cat = parse_categories(sh)
-    
-    all_cat = {}
-    all_cat.update(int_cat)
-    all_cat.update(ext_cat)
-
-
-    
-    #print(sh.row(39))
-    #aa = [ x for x in sh.row(39) if x.ctype != 0 ]
-    #print(aa)
-
+    sh = sheet
     prices = []
     to_skip = 0
     c_price = None
@@ -104,12 +87,10 @@ if __name__ == "__main__":
         if l.ctype != 0:
             
             ##cerca codice prezzo su prima colonna e imposta cprice
-            if (re.match("[A-Z]\.[0-9]+\.[0-9]+\.[0-9]+[.0-9]*\**$", l.value) is not None
-                #and 
-                #len([ x for x in sh.row(idx)[0:4] if x.ctype != 0 ]) == 3
-                #and 
-                #c_price is None
-                ):
+            if re.match(
+                    "[A-Z]\.[0-9]+\.[0-9]+\.[0-9]+[.0-9]*\**$", 
+                    l.value
+                    ) is not None:
 
                 code = sh.cell(idx, 0).value
                 name = sh.cell(idx, 1).value
@@ -127,9 +108,9 @@ if __name__ == "__main__":
                     else:
                         rows.append(((idx + idx2 + 1), row))
 
-                print("working on idx: {}".format(idx))
-                for idx, r in enumerate(rows):
-                    print("{} - {}\n".format(idx, r))
+#                print("working on idx: {}".format(idx))
+#                for idx, r in enumerate(rows):
+#                    print("{} - {}\n".format(idx, r))
                 
                 for row_nr, r in rows:
                     price_cells = r[13:15]
@@ -153,9 +134,26 @@ if __name__ == "__main__":
                                             val
                                             )
                                         )
+    return prices
+
+
+
+if __name__ == "__main__":
     
+    book = xlrd.open_workbook(sys.argv[1])
+    print("The number of worksheets is {0}".format(book.nsheets))
+    print("Worksheet name(s): {0}".format(book.sheet_names()))
+    sh = book.sheet_by_index(6)
+
+    int_cat, ext_cat = parse_categories(sh)
+    
+    all_cat = {}
+    all_cat.update(int_cat)
+    all_cat.update(ext_cat)
 
     
+    prices = parse_prices(sh)
+
     tot_int = 0
     tot_est = 0
 
