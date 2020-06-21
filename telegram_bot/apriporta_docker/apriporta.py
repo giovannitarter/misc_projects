@@ -7,6 +7,8 @@ import logging
 from telegram.ext import Updater
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext.filters import Filters
+
 
 import paho.mqtt.client as mqtt
 import threading
@@ -15,10 +17,10 @@ import signal
 import config as cfg
 
 
-logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+#logging.basicConfig(
+#        level=logging.DEBUG,
+#        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+#        )
 
 
 #
@@ -107,8 +109,10 @@ class TelegramClient():
                 )
         self.dispatcher = self.updater.dispatcher
         
+        self.filters = Filters.user(username=cfg.ALLOWED_USERS)
+
         self.start_handler = CommandHandler("start", self.start_cmd)
-        self.open_handler = CommandHandler("open", self.open_cmd)
+        self.open_handler = CommandHandler("open", self.open_cmd, filters=self.filters)
         
         self.dispatcher.add_handler(self.start_handler)
         self.dispatcher.add_handler(self.open_handler)
@@ -134,12 +138,7 @@ class TelegramClient():
 
 
     def start_cmd(self, update, context):
-        
-        context.bot.send_message(
-                chat_id=update.effective_chat.id, 
-                text="Touch to open",
-                reply_markup=self.reply_markup
-                )
+        self.send_help_message(update, context)
         return
     
 
@@ -165,7 +164,11 @@ class TelegramClient():
         self.callback()
 
         query.edit_message_text(text="Opening")
-        
+        self.send_help_message(update, context)
+        return
+
+
+    def send_help_message(self, update, context):
         context.bot.send_message(
                 chat_id=update.effective_chat.id, 
                 text="Touch to open",
