@@ -109,10 +109,15 @@ class TelegramClient():
                 )
         self.dispatcher = self.updater.dispatcher
         
-        self.filters = Filters.user(username=cfg.ALLOWED_USERS)
+        chat_filter = Filters.chat(chat_id=cfg.ALLOWED_CHAT)
+        user_filter = Filters.user(cfg.ALLOWED_USERS)
 
         self.start_handler = CommandHandler("start", self.start_cmd)
-        self.open_handler = CommandHandler("open", self.open_cmd, filters=self.filters)
+        self.open_handler = CommandHandler(
+                "open", 
+                self.open_cmd, 
+                filters=(chat_filter and user_filter)
+                )
         
         self.dispatcher.add_handler(self.start_handler)
         self.dispatcher.add_handler(self.open_handler)
@@ -196,7 +201,8 @@ def signal_handler(sig, frame):
 
 def my_exit(): 
     MQTT_OBJ.close()
-    TEL_OBJ.close()
+    if TEL_OBJ is not None:
+        TEL_OBJ.close()
     sys.exit(0)
     return
 
